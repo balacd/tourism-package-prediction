@@ -55,19 +55,19 @@ model_pipeline = make_pipeline(preprocessor, xgb_model)
 
 
 param_grid = {
-    'n_estimators': [100, 200],
-    'max_depth': [3, 5, 7],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'min_child_weight': [1, 3],
-    'subsample': [0.8, 1],
-    'colsample_bytree': [0.8, 1],
-    'gamma': [0, 0.1, 0.2],
-    'reg_alpha': [0, 0.1, 1],
-    'reg_lambda': [1, 1.5, 2]
+    'xgbclassifier__n_estimators': [100, 200],
+    'xgbclassifier__max_depth': [3, 5, 7],
+    'xgbclassifier__learning_rate': [0.01, 0.1, 0.2],
+    'xgbclassifier__min_child_weight': [1, 3],
+    'xgbclassifier__subsample': [0.8, 1],
+    'xgbclassifier__colsample_bytree': [0.8, 1],
+    'xgbclassifier__gamma': [0, 0.1, 0.2],
+    'xgbclassifier__reg_alpha': [0, 0.1, 1],
+    'xgbclassifier__reg_lambda': [1, 1.5, 2]
 }
 
 random_search = RandomizedSearchCV(
-    estimator=model,
+    estimator=model_pipeline,
     param_distributions=param_grid,
     n_iter=100,               
     scoring=make_scorer(f1_score, pos_label=1),
@@ -97,11 +97,14 @@ print(classification_report(ytest, y_pred_test))
 
 
 # Get transformed feature names after fitting
-ohe_feature_names = model_pipeline.named_steps['columntransformer']\
-    .named_transformers_['onehotencoder']\
+ohe_feature_names = (
+    best_model.named_steps['columntransformer']
+    .named_transformers_['onehotencoder']
     .get_feature_names_out(categorical_features)
+)
 
 final_feature_names = numeric_features + list(ohe_feature_names)
+
 
 print(final_feature_names)
 
