@@ -106,6 +106,8 @@ input_encoded = input_encoded.reindex(columns=model_columns, fill_value=0)
 
 
 if st.button("Predict Purchase"):
+    print(model_columns)
+    print(input_encoded)
     prediction = model.predict(input_encoded)[0]
     result = "Package will be purchased" if prediction == 1 else "Package wont be purchased"
     st.subheader("Prediction Result:")
