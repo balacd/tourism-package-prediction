@@ -1,7 +1,11 @@
 name: Tourism Project Pipeline
 
+# on:
+  # workflow_dispatch
 on:
-  workflow_dispatch
+ push:
+  branches:
+    - main  # Automatically triggers on push to the main branch
 
 jobs:
 
