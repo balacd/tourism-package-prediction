@@ -9,7 +9,7 @@ model = joblib.load(model_path)
 
 columns_path = hf_hub_download(
     repo_id="bala-ai/tourism_package_purchase_model",
-    filename="model_columns.pkl"
+    filename="model_columns.joblib"
 )
 model_columns = joblib.load(columns_path)
 
