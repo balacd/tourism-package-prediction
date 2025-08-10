@@ -16,22 +16,27 @@ DATASET_PATH = "hf://datasets/bala-ai/tourism-package-prediction/tourism.csv"
 df = pd.read_csv(DATASET_PATH)
 print("Dataset loaded successfully.")
 
-# Drop the unique identifier
-df.drop(columns=['UDI'], inplace=True)
+df['Gender'] = df['Gender'].replace({'Fe Male': 'Female'})
 
-# Encoding the categorical 'Type' column
-label_encoder = LabelEncoder()
-df['Type'] = label_encoder.fit_transform(df['Type'])
 
-target_col = 'Failure'
+df = df.drop(columns=['Unnamed: 0', 'CustomerID'])
 
-# Split into X (features) and y (target)
-X = df.drop(columns=[target_col])
-y = df[target_col]
+print("\n✅ Empty data :", df.isnull().sum())
+y = df['ProdTaken']
+X = df.drop(columns=['ProdTaken'])
+
+# # One-hot encode
+# X = pd.get_dummies(df, drop_first=True)
+
+print("\n📦 Final Processed Data Shape:", X.shape)
+
+
+
+
 
 # Perform train-test split
 Xtrain, Xtest, ytrain, ytest = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, stratify=y, random_state=42
 )
 
 Xtrain.to_csv("Xtrain.csv",index=False)
