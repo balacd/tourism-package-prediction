@@ -107,7 +107,19 @@ with mlflow.start_run():
     print("Best Params:\n", random_search.best_params_)
 
 
-    classification_threshold = 0.45
+    from sklearn.metrics import precision_recall_curve, f1_score
+
+    probs = best_model.predict_proba(Xtest)[:, 1]
+    prec, rec, thresh = precision_recall_curve(ytest, probs)
+    f1_scores = 2 * (prec * rec) / (prec + rec + 1e-10)
+    classification_threshold = thresh[np.argmax(f1_scores)]
+
+    print("Best Threshold for F1:", classification_threshold)
+
+
+
+
+#     classification_threshold = 0.45
 
     y_pred_train_proba = best_model.predict_proba(Xtrain)[:, 1]
     y_pred_train = (y_pred_train_proba >= classification_threshold).astype(int)
@@ -133,6 +145,29 @@ with mlflow.start_run():
         "test_recall": test_report['1']['recall'],
         "test_f1-score": test_report['1']['f1-score']
     })
+
+
+
+
+    # If model is XGBoost or similar
+    if hasattr(best_model, "feature_importances_"):
+        # Load your feature columns (if saved)
+        feature_columns = [
+            # put your column names here in order they were fed into the model
+        ]
+
+        # Create a DataFrame for feature importances
+        importance_df = pd.DataFrame({
+            'Feature': feature_columns,
+            'Importance': best_model.feature_importances_
+        }).sort_values(by="Importance", ascending=False)
+        print("feature_importances_\n")
+        print(importance_df)
+    else:
+        print("This model type does not have 'feature_importances_' attribute.")
+
+
+
 
     # Save best model
     model_path = "best_tourism_package_purchase_model_v1.joblib"
