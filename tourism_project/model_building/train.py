@@ -1,5 +1,6 @@
 # for data manipulation
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
@@ -17,6 +18,8 @@ from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import make_scorer, f1_score
 import mlflow
+from sklearn.metrics import precision_recall_curve, f1_score
+
 
 mlflow.set_tracking_uri("http://localhost:5000")
 mlflow.set_experiment("mlops-training-experiment")
