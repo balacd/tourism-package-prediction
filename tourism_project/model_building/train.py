@@ -16,7 +16,10 @@ from huggingface_hub import login, HfApi, create_repo
 from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import make_scorer, f1_score
+import mlflow
 
+mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_experiment("mlops-training-experiment")
 
 api = HfApi()
 
@@ -65,84 +68,107 @@ param_grid = {
     'xgbclassifier__reg_alpha': [0, 0.1, 1],
     'xgbclassifier__reg_lambda': [1, 1.5, 2]
 }
-
-random_search = RandomizedSearchCV(
-    estimator=model_pipeline,
-    param_distributions=param_grid,
-    n_iter=100,               
-    scoring=make_scorer(f1_score, pos_label=1),
-    cv=3,
-    random_state=42,
-    verbose=2,
-    n_jobs=-1
-)
-
-random_search.fit(Xtrain, ytrain)
-best_model = random_search.best_estimator_
-
-print("Best Params:\n", random_search.best_params_)
-
-# Predict on training set
-y_pred_train = best_model.predict(Xtrain)
-
-# Predict on test set
-y_pred_test = best_model.predict(Xtest)
-
-# Evaluation
-print("\nTraining Classification Report:")
-print(classification_report(ytrain, y_pred_train))
-
-print("\nTest Classification Report:")
-print(classification_report(ytest, y_pred_test))
+# Start MLflow run
+with mlflow.start_run():
 
 
-# Get transformed feature names after fitting
-ohe_feature_names = (
-    best_model.named_steps['columntransformer']
-    .named_transformers_['onehotencoder']
-    .get_feature_names_out(categorical_features)
-)
+    random_search = RandomizedSearchCV(
+        estimator=model_pipeline,
+        param_distributions=param_grid,
+        n_iter=100,               
+        scoring=make_scorer(f1_score, pos_label=1),
+        cv=3,
+        random_state=42,
+        verbose=2,
+        n_jobs=-1
+    )
 
-final_feature_names = numeric_features + list(ohe_feature_names)
+    random_search.fit(Xtrain, ytrain)
+
+    # Log all parameter combinations and their mean test scores
+    results = random_search.cv_results_
+    for i in range(len(results['params'])):
+        param_set = results['params'][i]
+        mean_score = results['mean_test_score'][i]
+        std_score = results['std_test_score'][i]
+
+        # Log each combination as a separate MLflow run
+        with mlflow.start_run(nested=True):
+            mlflow.log_params(param_set)
+            mlflow.log_metric("mean_test_score", mean_score)
+            mlflow.log_metric("std_test_score", std_score)
+
+    # Log best parameters separately in main run
+    mlflow.log_params(grid_search.best_params_)
 
 
-print(final_feature_names)
+    best_model = random_search.best_estimator_
 
-joblib.dump(final_feature_names, "model_columns.joblib")
-
-
+    print("Best Params:\n", random_search.best_params_)
 
 
+    classification_threshold = 0.45
 
-# Save best model
-joblib.dump(best_model, "best_tourism_package_purchase_model_v1.joblib")
+    y_pred_train_proba = best_model.predict_proba(Xtrain)[:, 1]
+    y_pred_train = (y_pred_train_proba >= classification_threshold).astype(int)
 
-# Upload to Hugging Face
-repo_id = "bala-ai/tourism_package_purchase_model"
-repo_type = "model"
+    y_pred_test_proba = best_model.predict_proba(Xtest)[:, 1]
+    y_pred_test = (y_pred_test_proba >= classification_threshold).astype(int)
 
-api = HfApi(token=os.getenv("HF_TOKEN"))
+    train_report = classification_report(ytrain, y_pred_train, output_dict=True)
+    print("\nTraining Classification Report:", train_report)
 
-# Step 1: Check if the space exists
-try:
-    api.repo_info(repo_id=repo_id, repo_type=repo_type)
-    print(f"Model Space '{repo_id}' already exists. Using it.")
-except RepositoryNotFoundError:
-    print(f"Model Space '{repo_id}' not found. Creating new space...")
-    create_repo(repo_id=repo_id, repo_type=repo_type, private=False)
-    print(f"Model Space '{repo_id}' created.")
+    test_report = classification_report(ytest, y_pred_test, output_dict=True)
+    print("\nTest Classification Report:", test_report)
 
-# create_repo("best_tourism_package_purchase_model", repo_type="model", private=False)
-api.upload_file(
-    path_or_fileobj="best_tourism_package_purchase_model_v1.joblib",
-    path_in_repo="best_tourism_package_purchase_model_v1.joblib",
-    repo_id=repo_id,
-    repo_type=repo_type,
-)
 
-api.upload_file(
-    path_or_fileobj="model_columns.joblib",
-    path_in_repo="model_columns.joblib",
-    repo_id=repo_id,
-    repo_type=repo_type,
-)
+    # Log the metrics for the best model
+    mlflow.log_metrics({
+        "train_accuracy": train_report['accuracy'],
+        "train_precision": train_report['1']['precision'],
+        "train_recall": train_report['1']['recall'],
+        "train_f1-score": train_report['1']['f1-score'],
+        "test_accuracy": test_report['accuracy'],
+        "test_precision": test_report['1']['precision'],
+        "test_recall": test_report['1']['recall'],
+        "test_f1-score": test_report['1']['f1-score']
+    })
+
+    # Save best model
+    model_path = "best_tourism_package_purchase_model_v1.joblib"
+
+    joblib.dump(best_model, model_path)
+
+    # Log the model artifact
+    mlflow.log_artifact(model_path, artifact_path="model")
+    print(f"Model saved as artifact at: {model_path}")
+
+    # Upload to Hugging Face
+    repo_id = "bala-ai/tourism_package_purchase_model"
+    repo_type = "model"
+
+    api = HfApi(token=os.getenv("HF_TOKEN"))
+
+    # Step 1: Check if the space exists
+    try:
+        api.repo_info(repo_id=repo_id, repo_type=repo_type)
+        print(f"Model Space '{repo_id}' already exists. Using it.")
+    except RepositoryNotFoundError:
+        print(f"Model Space '{repo_id}' not found. Creating new space...")
+        create_repo(repo_id=repo_id, repo_type=repo_type, private=False)
+        print(f"Model Space '{repo_id}' created.")
+
+    # create_repo("best_tourism_package_purchase_model", repo_type="model", private=False)
+    api.upload_file(
+        path_or_fileobj="best_tourism_package_purchase_model_v1.joblib",
+        path_in_repo="best_tourism_package_purchase_model_v1.joblib",
+        repo_id=repo_id,
+        repo_type=repo_type,
+    )
+
+    api.upload_file(
+        path_or_fileobj="model_columns.joblib",
+        path_in_repo="model_columns.joblib",
+        repo_id=repo_id,
+        repo_type=repo_type,
+    )
