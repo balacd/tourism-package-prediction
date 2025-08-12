@@ -7,13 +7,6 @@ import joblib
 model_path = hf_hub_download(repo_id="bala-ai/tourism_package_purchase_model", filename="best_tourism_package_purchase_model_v1.joblib")
 model = joblib.load(model_path)
 
-columns_path = hf_hub_download(
-    repo_id="bala-ai/tourism_package_purchase_model",
-    filename="model_columns.joblib"
-)
-model_columns = joblib.load(columns_path)
-
-print(model_columns)
 
 
 # Streamlit UI for Tourism package purchase Prediction
@@ -97,16 +90,9 @@ input_data = pd.DataFrame([{
 }])
 
 
-# One-hot encode the input row
-input_encoded = pd.get_dummies(input_data, drop_first=True)
-
-# Reindex to match training columns
-input_encoded = input_encoded.reindex(columns=model_columns, fill_value=0)
-
 
 
 if st.button("Predict Purchase"):
-    print("input_encoded--->",input_encoded)
     print("input_data--->",input_data)
     prediction = model.predict(input_data)[0]
     result = "Package will be purchased" if prediction == 1 else "Package wont be purchased"

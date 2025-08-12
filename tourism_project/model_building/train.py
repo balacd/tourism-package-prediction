@@ -99,7 +99,7 @@ with mlflow.start_run():
             mlflow.log_metric("std_test_score", std_score)
 
     # Log best parameters separately in main run
-    mlflow.log_params(grid_search.best_params_)
+    mlflow.log_params(random_search.best_params_)
 
 
     best_model = random_search.best_estimator_
@@ -162,13 +162,6 @@ with mlflow.start_run():
     api.upload_file(
         path_or_fileobj="best_tourism_package_purchase_model_v1.joblib",
         path_in_repo="best_tourism_package_purchase_model_v1.joblib",
-        repo_id=repo_id,
-        repo_type=repo_type,
-    )
-
-    api.upload_file(
-        path_or_fileobj="model_columns.joblib",
-        path_in_repo="model_columns.joblib",
         repo_id=repo_id,
         repo_type=repo_type,
     )
