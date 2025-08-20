@@ -55,15 +55,15 @@ jobs:
           sleep 5
 
       - name: Start Ngrok Tunnel
-        env:
-          NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
         run: |
-          ngrok config add-authtoken $NGROK_AUTH_TOKEN
-          nohup ngrok http 5000 > /dev/null &
-          sleep 5
-          echo "🔗 MLflow UI is available at:"
-          curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url'
-        
+          python - <<'EOF'
+          from pyngrok import ngrok
+          ngrok.set_auth_token("${{ secrets.NGROK_AUTH_TOKEN }}")
+          tunnel = ngrok.connect(5000)
+          print("🔗 MLflow UI is available at:", tunnel.public_url)
+          EOF
+
+
       - name: Model Building
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
