@@ -19,12 +19,19 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import make_scorer, f1_score
 import mlflow
 from sklearn.metrics import precision_recall_curve, f1_score
+import mlflow.sklearn
+import sys
+import shap
+import matplotlib.pyplot as plt
+
+hf_token = os.getenv("HF_TOKEN")
+if not hf_token:
+    raise ValueError("HF_TOKEN not found.")
 
 
 mlflow.set_tracking_uri("http://localhost:5000")
-mlflow.set_experiment("mlops-training-experiment")
+mlflow.set_experiment("tourism-package-experiment")
 
-api = HfApi()
 
 Xtrain_path = "hf://datasets/bala-ai/tourism-package-prediction/Xtrain.csv"
 Xtest_path = "hf://datasets/bala-ai/tourism-package-prediction/Xtest.csv"
@@ -101,6 +108,10 @@ with mlflow.start_run():
             mlflow.log_metric("mean_test_score", mean_score)
             mlflow.log_metric("std_test_score", std_score)
 
+#     pd.DataFrame(results).to_csv("cv_results.csv", index=False)
+#     mlflow.log_artifact("cv_results.csv")
+
+
     # Log best parameters separately in main run
     mlflow.log_params(random_search.best_params_)
 
@@ -110,14 +121,16 @@ with mlflow.start_run():
     print("Best Params:\n", random_search.best_params_)
 
 
-    from sklearn.metrics import precision_recall_curve, f1_score
-
+# calculate the threshold value
     probs = best_model.predict_proba(Xtest)[:, 1]
     prec, rec, thresh = precision_recall_curve(ytest, probs)
     f1_scores = 2 * (prec * rec) / (prec + rec + 1e-10)
-    classification_threshold = thresh[np.argmax(f1_scores)]
+
+    best_idx = np.argmax(f1_scores)
+    classification_threshold = thresh[best_idx] if best_idx < len(thresh) else 0.5
 
     print("Best Threshold for F1:", classification_threshold)
+    mlflow.log_param("classification_threshold", float(classification_threshold))
 
 
 
@@ -151,27 +164,6 @@ with mlflow.start_run():
 
 
 
-
-    # If model is XGBoost or similar
-    if hasattr(best_model, "feature_importances_"):
-        # Load your feature columns (if saved)
-        feature_columns = [
-            # put your column names here in order they were fed into the model
-        ]
-
-        # Create a DataFrame for feature importances
-        importance_df = pd.DataFrame({
-            'Feature': feature_columns,
-            'Importance': best_model.feature_importances_
-        }).sort_values(by="Importance", ascending=False)
-        print("feature_importances_\n")
-        print(importance_df)
-    else:
-        print("This model type does not have 'feature_importances_' attribute.")
-
-
-
-
     # Save best model
     model_path = "best_tourism_package_purchase_model_v1.joblib"
 
@@ -179,13 +171,76 @@ with mlflow.start_run():
 
     # Log the model artifact
     mlflow.log_artifact(model_path, artifact_path="model")
+    mlflow.sklearn.log_model(best_model, artifact_path="model", registered_model_name="tourism_package_model")
+
+    mlflow.log_param("python_version", sys.version)
+    mlflow.log_param("sklearn_version", sklearn.__version__)
+    mlflow.log_param("xgboost_version", xgb.__version__)
+
+
+
+
     print(f"Model saved as artifact at: {model_path}")
+
+
+
+    # ---------------------------
+    # SHAP Explainability
+    # ---------------------------
+
+
+    try:
+        # Extract fitted XGB model from pipeline
+        fitted_xgb = best_model.named_steps['xgbclassifier']
+
+        # Transform the train set using the same preprocessor
+        transformer = best_model.named_steps['columntransformer']
+        transformed_Xtrain = transformer.transform(Xtrain)
+
+        # Get feature names after preprocessing
+        feature_names = []
+        if hasattr(transformer, "get_feature_names_out"):
+            feature_names = transformer.get_feature_names_out()
+        else:
+            # fallback: use numeric+categorical if method unavailable
+            feature_names = numeric_features + categorical_features
+
+        # Initialize SHAP TreeExplainer
+        explainer = shap.TreeExplainer(fitted_xgb)
+        shap_values = explainer.shap_values(transformed_Xtrain)
+
+        # ---- Save SHAP values as CSV ----
+        shap_df = pd.DataFrame(shap_values, columns=feature_names)
+        shap_df.to_csv("shap_values.csv", index=False)
+        mlflow.log_artifact("shap_values.csv", artifact_path="explainability")
+
+        # ---- SHAP Summary Plot ----
+        shap.summary_plot(shap_values, transformed_Xtrain, feature_names=feature_names, show=False)
+        shap_summary_file = "shap_summary.png"
+        plt.savefig(shap_summary_file, dpi=300, bbox_inches="tight")
+        plt.close()
+        mlflow.log_artifact(shap_summary_file, artifact_path="explainability")
+
+        # ---- SHAP Bar Plot ----
+        shap.summary_plot(shap_values, transformed_Xtrain, feature_names=feature_names, plot_type="bar", show=False)
+        shap_bar_file = "shap_feature_importance.png"
+        plt.savefig(shap_bar_file, dpi=300, bbox_inches="tight")
+        plt.close()
+        mlflow.log_artifact(shap_bar_file, artifact_path="explainability")
+
+        print("SHAP plots and values logged to MLflow.")
+
+    except Exception as e:
+        print("Failed to generate SHAP outputs:", e)
+
+
+
 
     # Upload to Hugging Face
     repo_id = "bala-ai/tourism_package_purchase_model"
     repo_type = "model"
 
-    api = HfApi(token=os.getenv("HF_TOKEN"))
+    api = HfApi(token=hf_token)
 
     # Step 1: Check if the space exists
     try:
