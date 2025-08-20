@@ -23,6 +23,8 @@ import mlflow.sklearn
 import sys
 import shap
 import matplotlib.pyplot as plt
+import sklearn
+
 
 hf_token = os.getenv("HF_TOKEN")
 if not hf_token:
