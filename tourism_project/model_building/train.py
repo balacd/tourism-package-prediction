@@ -24,11 +24,24 @@ import sys
 import shap
 import matplotlib.pyplot as plt
 import sklearn
-
+from pyngrok import ngrok
+import subprocess
 
 hf_token = os.getenv("HF_TOKEN")
 if not hf_token:
     raise ValueError("HF_TOKEN not found.")
+
+ngrok_token = os.getenv("NGROK_AUTH_TOKEN")
+
+# Set your auth token here (replace with your actual token)
+ngrok.set_auth_token(ngrok_token)
+# Start MLflow UI on port 5000
+process = subprocess.Popen(["mlflow", "ui", "--port", "5000"])
+
+# Create public tunnel
+public_url = ngrok.connect(5000).public_url
+print("MLflow UI is available at:", public_url)
+
 
 
 # mlflow.set_tracking_uri("http://localhost:5000")
