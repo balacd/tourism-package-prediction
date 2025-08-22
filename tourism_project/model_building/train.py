@@ -31,7 +31,7 @@ if not hf_token:
     raise ValueError("HF_TOKEN not found.")
 
 
-mlflow.set_tracking_uri("http://localhost:5000")
+# mlflow.set_tracking_uri("http://localhost:5000")
 mlflow.set_experiment("tourism-package-experiment")
 
 
