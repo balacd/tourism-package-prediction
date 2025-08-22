@@ -47,7 +47,7 @@ print("MLflow UI is available at:", public_url)
 
 
 
-# mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_tracking_uri(public_url)
 mlflow.set_experiment("tourism-package-experiment")
 
 
