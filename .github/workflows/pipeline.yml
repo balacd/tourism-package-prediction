@@ -46,28 +46,11 @@ jobs:
       #     nohup mlflow ui --host 0.0.0.0 --port 5000 &  # Run MLflow UI in the background
       #     sleep 5  # Wait for a moment to let the server starts
 
-      - name: Start MLflow Server
-        run: |
-          nohup mlflow server \
-            --backend-store-uri sqlite:///mlflow.db \
-            --default-artifact-root ./mlruns \
-            --host 0.0.0.0 --port 5000 &
-          sleep 5
-
-      - name: Start Ngrok Tunnel
-        run: |
-          python - <<'EOF'
-          from pyngrok import ngrok
-          ngrok.set_auth_token("${{ secrets.NGROK_AUTH_TOKEN }}")
-          tunnel = ngrok.connect(5000)
-          print("🔗 MLflow UI is available at:", tunnel.public_url)
-          EOF
 
 
       - name: Model Building
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          MLFLOW_TRACKING_URI: http://127.0.0.1:5000
         run: python tourism_project/model_building/train.py
         
       - name: Keep Job Alive
