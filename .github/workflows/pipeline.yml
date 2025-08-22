@@ -2,9 +2,9 @@ name: Tourism Project Pipeline
 
 
 on:
- # push:
-  # branches:
-    # - main  # Automatically triggers on push to the main branch
+ push:
+  branches:
+    - main  # Automatically triggers on push to the main branch
  workflow_dispatch:  # Allow manual trigger from Actions tab
 
 
@@ -51,9 +51,6 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python tourism_project/model_building/train.py
-        
-      - name: Keep Job Alive
-        run: sleep 600   # keep MLflow + ngrok running for 10 mins after training 
 
 
   deploy-hosting:
