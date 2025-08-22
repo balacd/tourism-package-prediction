@@ -28,10 +28,13 @@ from pyngrok import ngrok
 import subprocess
 
 hf_token = os.getenv("HF_TOKEN")
+print("HF_TOKEN:", hf_token)
+
 if not hf_token:
     raise ValueError("HF_TOKEN not found.")
 
 ngrok_token = os.getenv("NGROK_AUTH_TOKEN")
+print("NGROK_AUTH_TOKEN -- ngrok_token:", ngrok_token)
 
 # Set your auth token here (replace with your actual token)
 ngrok.set_auth_token(ngrok_token)
