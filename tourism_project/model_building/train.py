@@ -37,7 +37,7 @@ ngrok_token = os.getenv("NGROK_AUTH_TOKEN")
 print("NGROK_AUTH_TOKEN -- ngrok_token:", ngrok_token)
 
 # Set your auth token here (replace with your actual token)
-ngrok.set_auth_token(ngrok_token)
+ngrok.set_auth_token("31Ju3VVJF4nzPgaQGxwDEPsWt0d_6X7bV1DGDiShWjty29eFU")
 # Start MLflow UI on port 5000
 process = subprocess.Popen(["mlflow", "ui", "--port", "5000"])
 
