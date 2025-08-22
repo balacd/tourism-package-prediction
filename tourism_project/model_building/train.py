@@ -33,21 +33,21 @@ print("HF_TOKEN:", hf_token)
 if not hf_token:
     raise ValueError("HF_TOKEN not found.")
 
-ngrok_token = os.getenv("NGROK_AUTH_TOKEN")
-print("NGROK_AUTH_TOKEN -- ngrok_token:", ngrok_token)
+# ngrok_token = os.getenv("NGROK_AUTH_TOKEN")
+# print("NGROK_AUTH_TOKEN -- ngrok_token:", ngrok_token)
 
-# Set your auth token here (replace with your actual token)
-ngrok.set_auth_token("31Ju3VVJF4nzPgaQGxwDEPsWt0d_6X7bV1DGDiShWjty29eFU")
-# Start MLflow UI on port 5000
-process = subprocess.Popen(["mlflow", "ui", "--port", "5000"])
+# # Set your auth token here (replace with your actual token)
+# ngrok.set_auth_token("31Ju3VVJF4nzPgaQGxwDEPsWt0d_6X7bV1DGDiShWjty29eFU")
+# # Start MLflow UI on port 5000
+# process = subprocess.Popen(["mlflow", "ui", "--port", "5000"])
 
-# Create public tunnel
-public_url = ngrok.connect(5000).public_url
-print("MLflow UI is available at:", public_url)
+# # Create public tunnel
+# public_url = ngrok.connect(5000).public_url
+# print("MLflow UI is available at:", public_url)
 
 
 
-mlflow.set_tracking_uri(public_url)
+mlflow.set_tracking_uri("http://localhost:5000")
 mlflow.set_experiment("tourism-package-experiment")
 
 
