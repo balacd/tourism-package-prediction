@@ -19,6 +19,9 @@ Please enter the following details to get a prediction.
 
 
 # ----------------- User Inputs -----------------
+
+st.subheader("📊 Customer  Data")
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -28,14 +31,17 @@ with col1:
     Occupation = st.selectbox("Occupation", ["Salaried", "Free Lancer", "Small Business", "Large Business"])
     Designation = st.selectbox("Designation", ["Manager", "Executive", "Senior Manager", "AVP", "VP"])
     CityTier = st.selectbox("City Tier", [1, 2, 3])
+    MonthlyIncome = st.number_input("Monthly Income", min_value=1000, value=10000, step=1000)
 
 with col2:
-    MonthlyIncome = st.number_input("Monthly Income", min_value=1000, value=10000, step=1000)
-    OwnCar_option = st.radio("Own Car", ["No", "Yes"])
-    Passport_option = st.radio("Passport", ["No", "Yes"])
+    OwnCar_option = st.radio("Own Car", ["No", "Yes"], horizontal=True)
+    Passport_option = st.radio("Passport", ["No", "Yes"],horizontal=True)
+    TypeofContact = st.selectbox("Type of Contact", ["Self Enquiry", "Company Invited"])
     NumberOfTrips = st.number_input("Number Of Trips", min_value=0, max_value=100, value=1, step=1)
     NumberOfPersonVisiting = st.number_input("Number Of Persons Visiting", min_value=1, max_value=100, value=5, step=1)
     NumberOfChildrenVisiting = st.number_input("Number Of Children Visiting", min_value=0, max_value=20, value=0, step=1)
+    PreferredPropertyStar = st.number_input("Preferred Property Star", min_value=0.0, max_value=5.0, value=5.0, step=1.0)
+
 
 st.markdown("---")
 st.subheader("📊 Customer Interaction Data")
@@ -43,14 +49,12 @@ st.subheader("📊 Customer Interaction Data")
 col3, col4 = st.columns(2)
 
 with col3:
-    TypeofContact = st.selectbox("Type of Contact", ["Self Enquiry", "Company Invited"])
     ProductPitched = st.selectbox("Product Pitched", ["Deluxe", "Basic", "Standard", "Super Deluxe", "King"])
     DurationOfPitch = st.number_input("Duration Of Pitch (minutes)", min_value=1, value=10, step=1)
 
 with col4:
     PitchSatisfactionScore = st.number_input("Pitch Satisfaction Score", min_value=1, max_value=4, value=3, step=1)
     NumberOfFollowups = st.number_input("Number Of Followups", min_value=1, max_value=10, value=4, step=1)
-    PreferredPropertyStar = st.number_input("Preferred Property Star", min_value=0.0, max_value=5.0, value=5.0, step=1.0)
 
 # ----------------- Preprocessing -----------------
 OwnCar = 1 if OwnCar_option == "Yes" else 0
