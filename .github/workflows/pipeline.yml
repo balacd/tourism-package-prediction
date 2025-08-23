@@ -2,9 +2,9 @@ name: Tourism Project Pipeline
 
 
 on:
- push:
-  branches:
-    - main  # Automatically triggers on push to the main branch
+ # push:
+ #  branches:
+ #    - main  # Automatically triggers on push to the main branch
  workflow_dispatch:  # Allow manual trigger from Actions tab
 
 
