@@ -205,9 +205,12 @@ with mlflow.start_run():
         feature_names = []
         if hasattr(transformer, "get_feature_names_out"):
             feature_names = transformer.get_feature_names_out()
+            print("feature_names:",feature_names)
+
         else:
             # fallback: use numeric+categorical if method unavailable
             feature_names = numeric_features + categorical_features
+            print("feature_names_2:",feature_names)
 
         # Initialize SHAP TreeExplainer
         explainer = shap.TreeExplainer(fitted_xgb)
@@ -233,8 +236,6 @@ with mlflow.start_run():
         mlflow.log_artifact(shap_bar_file, artifact_path="explainability")
 
         print("SHAP plots and values logged to MLflow.")
-        print("feature_names:",feature_names)
-        print("shap_values:",shap_values)
 
 
     except Exception as e:

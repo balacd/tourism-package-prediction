@@ -18,7 +18,7 @@ Please enter the following details to get a prediction.
 """)
 # ----------------- User Inputs -----------------
 
-st.subheader("📊 Customer  Data")
+st.subheader("Customer  Data")
 
 col1, col2 = st.columns(2)
 
@@ -42,7 +42,7 @@ with col2:
 
 
 st.markdown("---")
-st.subheader("📊 Customer Interaction Data")
+st.subheader("Customer Interaction Data")
 
 col3, col4 = st.columns(2)
 
@@ -90,7 +90,34 @@ if st.button("Predict Purchase"):
     print("input_data--->",input_data)
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
-    result = "Package will be purchased" if prediction == 1 else "Package won't be purchased"
-    st.subheader("Prediction Result:")
-    st.success(f"The model predicts: **{result}**")
-    st.info(f"Purchase likelihood: {probability:.2%}")
+#     result = "Package will be purchased" if prediction == 1 else "Package won't be purchased"
+#     st.subheader("Prediction Result:")
+#     st.success(f"The model predicts: **{result}**")
+#     st.info(f"Purchase likelihood: {probability:.2%}")
+
+    if prediction == 1:
+        st.subheader("Prediction Result:")
+        st.success("Package will be purchased")
+        st.info(f"Purchase likelihood: {probability:.2%}")
+    else:
+        st.subheader("Prediction Result:")
+        st.markdown(
+            f"""
+            <div style="background-color:#f8d7da; padding:15px; border-radius:10px; color:#721c24;">
+                <b>Package won't be purchased</b><br>
+                Rejection likelihood: {(1 - probability):.2%}</b><br>
+                Purchase likelihood: {probability:.2%}
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+# ----------------- Reset Button -----------------
+if st.button("🔄 Reset Form"):
+    # Clear all inputs + prediction messages
+    for key in st.session_state.keys():
+        del st.session_state[key]
+    st.rerun()
+
+
