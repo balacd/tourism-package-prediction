@@ -15,7 +15,7 @@ import os
 # for hugging face space authentication to upload files
 from huggingface_hub import login, HfApi, create_repo
 from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import make_scorer, f1_score
 import mlflow
 from sklearn.metrics import precision_recall_curve, f1_score
@@ -24,8 +24,6 @@ import sys
 import shap
 import matplotlib.pyplot as plt
 import sklearn
-from pyngrok import ngrok
-import subprocess
 
 hf_token = os.getenv("HF_TOKEN")
 print("HF_TOKEN:", hf_token)
@@ -71,37 +69,38 @@ xgb_model = xgb.XGBClassifier(scale_pos_weight=class_weight, random_state=42)
 model_pipeline = make_pipeline(preprocessor, xgb_model)
 
 
-
+# ---------------- Hyperparameter Grid ----------------
 param_grid = {
-    'xgbclassifier__n_estimators': [100, 200],
-    'xgbclassifier__max_depth': [3, 5, 7],
-    'xgbclassifier__learning_rate': [0.01, 0.1, 0.2],
+    'xgbclassifier__n_estimators': [100, 200, 300],
+    'xgbclassifier__max_depth': [3, 5],
+    'xgbclassifier__learning_rate': [0.05, 0.1],
     'xgbclassifier__min_child_weight': [1, 3],
     'xgbclassifier__subsample': [0.8, 1],
     'xgbclassifier__colsample_bytree': [0.8, 1],
-    'xgbclassifier__gamma': [0, 0.1, 0.2],
-    'xgbclassifier__reg_alpha': [0, 0.1, 1],
-    'xgbclassifier__reg_lambda': [1, 1.5, 2]
+    'xgbclassifier__gamma': [0, 0.1],
+    'xgbclassifier__reg_alpha': [0, 0.1],
+    'xgbclassifier__reg_lambda': [1, 2]
 }
+
 # Start MLflow run
 with mlflow.start_run():
 
-
-    random_search = RandomizedSearchCV(
-        estimator=model_pipeline,
-        param_distributions=param_grid,
-        n_iter=100,               
-        scoring=make_scorer(f1_score, pos_label=1),
+    grid_search = GridSearchCV(
+        model_pipeline,
+        param_grid,
         cv=3,
-        random_state=42,
-        verbose=2,
-        n_jobs=-1
+        scoring=make_scorer(f1_score, pos_label=1),
+        n_jobs=-1,
+        verbose=2
     )
 
-    random_search.fit(Xtrain, ytrain)
+
+
+
+    grid_search.fit(Xtrain, ytrain)
 
     # Log all parameter combinations and their mean test scores
-    results = random_search.cv_results_
+    results = grid_search.cv_results_
     for i in range(len(results['params'])):
         param_set = results['params'][i]
         mean_score = results['mean_test_score'][i]
@@ -118,12 +117,12 @@ with mlflow.start_run():
 
 
     # Log best parameters separately in main run
-    mlflow.log_params(random_search.best_params_)
+    mlflow.log_params(grid_search.best_params_)
 
 
-    best_model = random_search.best_estimator_
+    best_model = grid_search.best_estimator_
 
-    print("Best Params:\n", random_search.best_params_)
+    print("Best Params:\n", grid_search.best_params_)
 
 
 # calculate the threshold value
@@ -234,6 +233,9 @@ with mlflow.start_run():
         mlflow.log_artifact(shap_bar_file, artifact_path="explainability")
 
         print("SHAP plots and values logged to MLflow.")
+        print("feature_names:",feature_names)
+        print("shap_values:",shap_values)
+
 
     except Exception as e:
         print("Failed to generate SHAP outputs:", e)
