@@ -6,18 +6,16 @@ import joblib
 # Download and load the model
 model_path = hf_hub_download(repo_id="bala-ai/tourism_package_purchase_model", filename="best_tourism_package_purchase_model_v1.joblib")
 model = joblib.load(model_path)
-
-
-
 # Streamlit UI for Tourism package purchase Prediction
-st.title("Tourism package purchase Prediction App")
+st.markdown(
+    "<h1 style='white-space: nowrap;'>🏝️ Tourism Package Purchase Prediction App</h1>",
+    unsafe_allow_html=True
+)
+# st.title("Tourism package purchase Prediction App")
 st.write("""
 This application predicts the likelihood of Tourism package purchased by the customer based on its operational parameters.
 Please enter the following details to get a prediction.
 """)
-
-
-
 # ----------------- User Inputs -----------------
 
 st.subheader("📊 Customer  Data")
