@@ -84,40 +84,40 @@ input_data = pd.DataFrame([{
     'NumberOfTrips': NumberOfTrips
 }])
 
+# ----------------- Action Buttons -----------------
+colA, colB = st.columns([1, 1])
+
+with colA:
+    if st.button("Predict Purchase"):
+        print("input_data--->",input_data)
+        prediction = model.predict(input_data)[0]
+        probability = model.predict_proba(input_data)[0][1]
+
+        if prediction == 1:
+            st.subheader("Prediction Result:")
+            st.success("Package will be purchased")
+            st.info(f"Purchase likelihood: {probability:.2%}")
+        else:
+            st.subheader("Prediction Result:")
+            st.markdown(
+                f"""
+                <div style="background-color:#f8d7da; padding:15px; border-radius:10px; color:#721c24;">
+                    <b>Package won't be purchased</b><br>
+                    Purchase likelihood: {probability:.2%}
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 
-if st.button("Predict Purchase"):
-    print("input_data--->",input_data)
-    prediction = model.predict(input_data)[0]
-    probability = model.predict_proba(input_data)[0][1]
-#     result = "Package will be purchased" if prediction == 1 else "Package won't be purchased"
-#     st.subheader("Prediction Result:")
-#     st.success(f"The model predicts: **{result}**")
-#     st.info(f"Purchase likelihood: {probability:.2%}")
+with colB:
+    # ----------------- Reset Button -----------------
+    if st.button("🔄 Reset Form"):
+        # Clear all inputs + prediction messages
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
 
-    if prediction == 1:
-        st.subheader("Prediction Result:")
-        st.success("Package will be purchased")
-        st.info(f"Purchase likelihood: {probability:.2%}")
-    else:
-        st.subheader("Prediction Result:")
-        st.markdown(
-            f"""
-            <div style="background-color:#f8d7da; padding:15px; border-radius:10px; color:#721c24;">
-                <b>Package won't be purchased</b><br>
-                Rejection likelihood: {(1 - probability):.2%}</b><br>
-                Purchase likelihood: {probability:.2%}
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-# ----------------- Reset Button -----------------
-if st.button("🔄 Reset Form"):
-    # Clear all inputs + prediction messages
-    for key in st.session_state.keys():
-        del st.session_state[key]
-    st.rerun()
 
 
