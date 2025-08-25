@@ -58,9 +58,6 @@ with col4:
 OwnCar = 1 if OwnCar_option == "Yes" else 0
 Passport = 1 if Passport_option == "Yes" else 0
 
-# Validation Check
-if NumberOfChildrenVisiting > NumberOfPersonVisiting:
-    st.error("⚠️ Number of children visiting cannot exceed total number of persons visiting.")
 
 # Assemble user input into DataFrame
 input_data = pd.DataFrame([{
@@ -113,7 +110,7 @@ with colA:
 
 with colB:
     # ----------------- Reset Button -----------------
-    if st.button("🔄 Reset Form"):
+    if st.button("Reset Form"):
         # Clear all inputs + prediction messages
         for key in list(st.session_state.keys()):
             del st.session_state[key]

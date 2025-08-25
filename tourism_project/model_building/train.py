@@ -210,7 +210,6 @@ with mlflow.start_run():
         else:
             # fallback: use numeric+categorical if method unavailable
             feature_names = numeric_features + categorical_features
-            print("feature_names_2:",feature_names)
 
         # Initialize SHAP TreeExplainer
         explainer = shap.TreeExplainer(fitted_xgb)
